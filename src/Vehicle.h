@@ -8,8 +8,12 @@
 #include<map>
 #include <vector>
 #include "DeviceContainer.h"
-
+#include "tisudshl.h"
+#include "TriggerCam.h"
+//#include "PeriodicData.h"
+//#include "TriggerCam.h"
 using namespace std;
+//using namespace cv;
 typedef map<XsDevice *, XsPortInfo const *> DeviceInfo;
 typedef DeviceInfo::iterator DeviceInfoIterator;
 
@@ -26,14 +30,22 @@ private:
     GPSIterator itr;
     DeviceInfoIterator pos;
     XsControl* control;
-
+	//list<PeriodicData> dataBuffer;
 //    Camera information
-
+	//TriggerCam cam1, cam2;
+	LARGE_INTEGER frequency;
+	TriggerCam camLeft, camRight;
 //  Communication to cloud
 public:
     Vehicle();
     bool initGPS();
     bool initCamera();
+	XsDataPacket latestGPSLocation();
+	void recordCamera(cv::Mat &, cv::Mat &);
+	//void recordCamera();
+	void recordGPS();
+
+		
 
 
 };

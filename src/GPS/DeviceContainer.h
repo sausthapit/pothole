@@ -8,19 +8,19 @@
 
 
 
-class DeviceContainer 
+class DeviceContainer
 {
 private:
 	//XsDevice * m_device;
 	const XsPortInfo* m_portInfo;
 	mutable XsMutex m_mutex;
-	
+	string fname;
 	size_t m_maxNumberOfPacketsInBuffer;
 	size_t m_numberOfPacketsInBuffer;
 	std::list<XsDataPacket> m_packetBuffer;
 protected:
 	
-//	virtual void onLiveDataAvailable(XsDevice*, const XsDataPacket* packet);
+	//virtual void onLiveDataAvailable(XsDevice*, const XsDataPacket* packet);
 public:
 	XsDevice * m_device;
 	XsDeviceCallbackHandler* m_CallBackHandler;

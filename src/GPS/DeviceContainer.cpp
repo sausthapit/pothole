@@ -22,7 +22,16 @@ DeviceContainer::DeviceContainer(XsDevice* device, const XsPortInfo* portInfo, s
 }
 void DeviceContainer::addCallback()
 {
-	XsDeviceCallbackHandler* tmp=new XsDeviceCallbackHandler(5);
+	
+	
+	ostringstream os;
+	time_t now = time(0);
+	tm *ltm = localtime(&now);
+	char dt[40];
+	strftime(dt, sizeof(dt), "%F_%H_%M", ltm);
+	os << "GPS_" << this->m_device->deviceId().toString().toStdString() <<"_"<<dt<< ".txt";
+	fname = os.str();
+	XsDeviceCallbackHandler* tmp=new XsDeviceCallbackHandler(fname,2);
 	m_CallBackHandler = tmp;
 	m_device->addCallbackHandler(tmp);
 }
@@ -114,14 +123,3 @@ void DeviceContainer::operator()()
 DeviceContainer::~DeviceContainer()
 {
 }
- /*void DeviceContainer::onLiveDataAvailable(XsDevice*, const XsDataPacket* packet) {
-	XsMutexLocker lock(m_mutex);
-	assert(packet != 0);
-	while (m_numberOfPacketsInBuffer >= m_maxNumberOfPacketsInBuffer)
-	{
-		(void)popOldestPacket();
-	}
-	m_packetBuffer.push_back(*packet);
-	++m_numberOfPacketsInBuffer;
-	assert(m_numberOfPacketsInBuffer <= m_maxNumberOfPacketsInBuffer);
-}*/
