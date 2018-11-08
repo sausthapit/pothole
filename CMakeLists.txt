@@ -137,6 +137,7 @@ list(APPEND srcFiles
 		"${PROJECT_SOURCE_DIR}/src/Camera/Listener.cpp"
 		"${PROJECT_SOURCE_DIR}/src/Camera/TriggerCam.cpp"
 		"${PROJECT_SOURCE_DIR}/src/XMP/AddMetadata.cpp"
+		"${PROJECT_SOURCE_DIR}/src/HeavyWorker.cpp"
 		"${PROJECT_SOURCE_DIR}/src/main.cpp")
 
 

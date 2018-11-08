@@ -10,6 +10,7 @@
 #include "DeviceContainer.h"
 #include "tisudshl.h"
 #include "TriggerCam.h"
+
 //#include "PeriodicData.h"
 //#include "TriggerCam.h"
 using namespace std;
@@ -41,6 +42,7 @@ public:
     bool initGPS();
     bool initCamera();
 	XsDataPacket latestGPSLocation();
+	std::vector<std::string> latestGPSLocationString();
 	void recordCamera(cv::Mat &, cv::Mat &);
 	//void recordCamera();
 	void recordGPS();

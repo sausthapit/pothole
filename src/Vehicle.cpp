@@ -72,6 +72,41 @@ bool Vehicle::initCamera() {
 XsDataPacket Vehicle::latestGPSLocation() {
 	return this->gpsList[0]->m_CallBackHandler->latestGPS;
 }
+
+std::vector<std::string> Vehicle::latestGPSLocationString()
+{
+	std::ostringstream strs;
+	std::vector<std::string> gpsString;
+	XsDataPacket packet = this->latestGPSLocation();
+	
+	//XsVector gps = packet.positionLLA();
+	//XsTimeStamp t = packet.m_toa;
+	//testing
+
+	XsVector gps;
+	gps[0] = 1;
+	gps[1] = 2;
+	gps[3] = 3;
+
+
+
+	/*time_t tt = t.msTime() / 1000;
+	char *time = ctime(&tt);
+	std::string timeString(time);
+	gpsString.push_back(timeString);*/
+	strs << gps[0];
+	
+	gpsString.push_back(strs.str());
+	strs.flush();
+	strs << gps[1];
+	gpsString.push_back(strs.str());
+	strs.flush();
+	strs << gps[2];
+	gpsString.push_back(strs.str());
+	
+	return gpsString;
+}
+
 void Vehicle::recordCamera(cv::Mat &imgLeft, cv::Mat &imgRight)
 {
 	int kk = 0;

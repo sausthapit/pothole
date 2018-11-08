@@ -139,9 +139,11 @@ void displayPropertyValues(AdobeXMPCore::spIMetadata metaNode)
 
 	// Get dc:MetadataDate
 	AdobeXMPCore::spISimpleNode dateNode = metaNode->GetSimpleNode(kXMP_NS_XMP, AdobeXMPCommon::npos, "MetadataDate", AdobeXMPCommon::npos);
-	string date = dateNode->GetValue()->c_str();
-	cout << "meta:MetadataDate = " << date << endl;
-
+	if (dateNode != NULL)
+	{
+		string date = dateNode->GetValue()->c_str();
+		cout << "meta:MetadataDate = " << date << endl;
+	}
 
 	// See if the flash struct exists and see if it was used
 	AdobeXMPCore::spIStructureNode flashNode = metaNode->GetStructureNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "Flash", AdobeXMPCommon::npos);
@@ -154,7 +156,30 @@ void displayPropertyValues(AdobeXMPCore::spIMetadata metaNode)
 			cout << "Flash Used = " << fieldValue << endl;
 		}
 	}
-
+	AdobeXMPCore::spISimpleNode gpsLatitude = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLatitude", AdobeXMPCommon::npos);
+	if (gpsLatitude != NULL)
+	{
+		string lat = gpsLatitude->GetValue()->c_str();
+		cout << "exif:GPSLatitude: " << lat << endl;
+	}
+	AdobeXMPCore::spISimpleNode gpsLongitude = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLongitude", AdobeXMPCommon::npos);
+	if (gpsLongitude != NULL)
+	{
+		string lon = gpsLongitude->GetValue()->c_str();
+		cout << "exif:GPSLongitude: " << lon << endl;
+	}
+	AdobeXMPCore::spISimpleNode gpsAltitude = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSAltitude", AdobeXMPCommon::npos);
+	if (gpsAltitude != NULL)
+	{
+		string alt = gpsAltitude->GetValue()->c_str();
+		cout << "exif:GPSAltitude: " << alt << endl;
+	}
+	AdobeXMPCore::spISimpleNode gpsTimeStamp = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSTimeStamp", AdobeXMPCommon::npos);
+	if (gpsTimeStamp != NULL)
+	{
+		string tstamp = gpsTimeStamp->GetValue()->c_str();
+		cout << "exif:GPSTimeStamp: " << tstamp << endl;
+	}
 
 	cout << "----------------------------------------" << endl;
 }
@@ -228,16 +253,11 @@ void writeRDFToFile(string * rdf, string filename)
 *the modified XMP is written back to the resource file.
 */
 //
-int addXMP()
+int addXMP(string filename ,std::vector<std::string> gpsString)
 //int main(int argc, const char * argv[])
 {
-//	if (argc != 2) // 2 := command and 1 parameter
-//	{
-//		cout << "usage: ModifyingXMP (filename)" << endl;
-//		return 0;
-//	}
-//
-	string filename = string("img.jpg");
+
+	//string filename = string("img.jpg");
 
 	if (!SXMPMeta::Initialize())
 	{
@@ -297,7 +317,7 @@ int addXMP()
 				AdobeXMPCore::spISimpleNode simpleNode = metaNode->GetSimpleNode(kXMP_NS_XMP, AdobeXMPCommon::npos, "CreatorTool", AdobeXMPCommon::npos);
 				
 				if (simpleNode!=NULL)
-				simpleNode->SetValue("Updated By XMP SDK", AdobeXMPCommon::npos);
+				simpleNode->SetValue("Updated By Cranfied University", AdobeXMPCommon::npos);
 
 				// Update the MetadataDate
 				XMP_DateTime dt;
@@ -305,6 +325,11 @@ int addXMP()
 				string  date;
 				SXMPUtils::ConvertFromDate(dt, &date);
 				AdobeXMPCore::spISimpleNode dateNode = metaNode->GetSimpleNode(kXMP_NS_XMP, AdobeXMPCommon::npos, "MetadataDate", AdobeXMPCommon::npos);
+				if (dateNode == NULL)
+				{
+					dateNode = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_XMP, AdobeXMPCommon::npos, "MetadataDate", AdobeXMPCommon::npos);
+
+				}
 				dateNode->SetValue(date.c_str(), AdobeXMPCommon::npos);
 
 				// Add an item onto the dc:creator array
@@ -328,7 +353,24 @@ int addXMP()
 					arrayNode->AppendNode(creatorChild1);
 					arrayNode->AppendNode(creatorChild2);
 				}
-
+				// Add gps info
+				AdobeXMPCore::spISimpleNode gpsLatitude = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLatitude", AdobeXMPCommon::npos);
+				if (gpsLatitude == NULL)
+					gpsLatitude = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLatitude", AdobeXMPCommon::npos);
+				gpsLatitude->SetValue(gpsString.at(1).c_str(), AdobeXMPCommon::npos);
+				AdobeXMPCore::spISimpleNode gpsLongitude = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLongitude", AdobeXMPCommon::npos);
+				if (gpsLongitude == NULL)
+					gpsLongitude = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLongitude", AdobeXMPCommon::npos);
+				gpsLongitude->SetValue(gpsString.at(2).c_str(), AdobeXMPCommon::npos);
+				AdobeXMPCore::spISimpleNode gpsAltitude = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSAltitude", AdobeXMPCommon::npos);
+				if (gpsAltitude == NULL)
+					gpsAltitude = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSAltitude", AdobeXMPCommon::npos);
+				gpsAltitude->SetValue(gpsString.at(3).c_str(), AdobeXMPCommon::npos);
+				AdobeXMPCore::spISimpleNode gpsTimeStamp = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSTimeStamp", AdobeXMPCommon::npos);
+				if (gpsTimeStamp == NULL)
+					gpsTimeStamp = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSTimeStamp", AdobeXMPCommon::npos);
+				gpsTimeStamp->SetValue(gpsString.at(0).c_str(), AdobeXMPCommon::npos);
+				
 				// Display the properties again to show changes
 				cout << "After update:" << endl;
 				displayPropertyValues(metaNode);
