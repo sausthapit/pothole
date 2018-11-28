@@ -27,7 +27,9 @@ public:
 	DeviceContainer(size_t);
 	~DeviceContainer();
 	DeviceContainer(XsDevice* device, const XsPortInfo* portInfo, size_t);
-	void addCallback();
+
+	void addCallback(std::string dt);
+	
 	XsDataPacket popOldestPacket();
 	bool configure();
 	bool gotoMeasurement();

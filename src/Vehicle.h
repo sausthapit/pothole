@@ -22,7 +22,7 @@ typedef vector<DeviceContainer*> ListOfGPS;
 typedef ListOfGPS::iterator GPSIterator;
 
 // Specify the number of buffers to be used.
-#define NUM_BUFFERS_CAM 10
+//#define NUM_BUFFERS_CAM 10
 class Vehicle {
 private:
 //    GPS information
@@ -39,7 +39,10 @@ private:
 //  Communication to cloud
 public:
     Vehicle();
-    bool initGPS();
+	
+	Vehicle(std::string startTime);
+
+	bool initGPS(std:: string);
     bool initCamera();
 	XsDataPacket latestGPSLocation();
 	std::vector<std::string> latestGPSLocationString();

@@ -24,12 +24,12 @@ class HeavyWorker
 public:
 	HeavyWorker();
 	~HeavyWorker();
-	bool Stereo(int currFrame, cv::Mat,cv::Mat);
+	std::vector<std::pair<cv::Mat, float>> Stereo(cv::Mat,cv::Mat);
 	 std::vector<cv::String> readClassNames(const char *);
 	int Pothole_Recognition();
 	void MvStereoRectify(cv::Mat _rmap[2][2], cv::Rect vRoi[2]);
 	 void getMaxClass(const cv::Mat &probBlob, int *classId, double *classProb);
-	void Depth_Estimation(cv::Mat imgDisparity8U);
+	float Depth_Estimation(cv::Mat imgDisparity8U);
 private:
 	int SADWindowSize = 5;
 	int numberOfDisparities = 192;

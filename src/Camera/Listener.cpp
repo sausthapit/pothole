@@ -89,14 +89,22 @@ void CListener::exportImageMat(smart_ptr<MemBuffer> pBuffer, DWORD currFrame)
 	//generate image from the buffer
 	pImageData = pBuffer->getPtr();
 	smart_ptr<BITMAPINFOHEADER> pInf = pBuffer->getBitmapInfoHeader();
+	std::cout<<pBuffer->getColorformat();
 	iImageSize = pInf->biWidth * pInf->biHeight * pInf->biBitCount / 8;
 	// Now loop through the data and change every byte. This small sample inverts every pixel.
 	/*for (int i = 0; i < iImageSize; i++)
 	{
-		pImageData[i] = pImageData[i];
+		pImageData[i] = 255-pImageData[i];
 	}*/
+
+	//saveToFileBMP(*pBuffer, "icApi.bmp");
 	/// read image into buffer using OpenCV 
 	cv::Mat imgtmp(pInf->biHeight, pInf->biWidth, CV_8UC3, pImageData);
+	
+	//cv::namedWindow("Display window", 1);// Create a window for display.
+	//cv::imshow("Display window", imgtmp);                   // Show our image inside it.
+	//cv::imwrite("cv.bmp",imgtmp);
+	//cv::waitKey(0);
 	this->img = imgtmp;
 	num_captured.fetch_add(1);
 }
@@ -107,7 +115,7 @@ void CListener::exportImageMat(smart_ptr<MemBuffer> pBuffer, DWORD currFrame)
 	All members of m_BufferWritten are initialized to false.
 	This means that no buffers have been processed.
 */
-void	CListener::setBufferSize( unsigned long NumBuffers )
+void	CListener::setBufferSize( unsigned long NumBuffers)
 {
 	//NumBuffers = 1000000;
 	m_BufferWritten.resize(NumBuffers, false);

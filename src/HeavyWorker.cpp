@@ -17,8 +17,9 @@ HeavyWorker::HeavyWorker()
 HeavyWorker::~HeavyWorker()
 {
 }
-bool HeavyWorker::Stereo(int currFrame,cv::Mat imgLeft, cv::Mat imgRight)
+std::vector<std::pair<cv::Mat, float>> HeavyWorker::Stereo(cv::Mat imgLeft, cv::Mat imgRight)
 {
+	std::vector<std::pair<cv::Mat, float>> potholeImageListWithDepth;
 	/*sprintf(filename_L, "image_Left_%02i.bmp", currFrame);
 	sprintf(filename_R, "image_Right_%02i.bmp", currFrame);
 
@@ -54,8 +55,10 @@ bool HeavyWorker::Stereo(int currFrame,cv::Mat imgLeft, cv::Mat imgRight)
 	resize(imgLeft, imgLeft, size);//resize image
 	resize(imgRight, imgRight, size);//resize image
 
-	imwrite("imgLeft_Image.jpg", imgLeft);
-	imwrite("imgRight_Image.jpg", imgRight);
+	/*imwrite("imgLeft_Image.jpg", imgLeft);
+	imwrite("imgRight_Image.jpg", imgRight);*/
+	this->imgLeft = imgLeft;
+	this->imgRight = imgRight;
 	// ************** End Rectify the images ******
 
 	// ******** PNet Recognition ********
@@ -88,10 +91,10 @@ bool HeavyWorker::Stereo(int currFrame,cv::Mat imgLeft, cv::Mat imgRight)
 		//-- And create the image in which we will save our disparities
 		cv::Mat imgDisparity16S = cv::Mat(greyMat_L.rows, greyMat_L.cols, CV_16S);
 		cv::Mat imgDisparity8U = cv::Mat(greyMat_L.rows, greyMat_L.cols, CV_8UC1);
-
+		cv::Mat colour_patch;
 		if (imgLeft.empty() || imgRight.empty())
 		{
-			std::cout << " --(!) Error reading images " << std::endl; return false;
+			std::cout << " --(!) Error reading images " << std::endl; 
 		}
 
 		//-- 2. Call the constructor for StereoBM
@@ -141,8 +144,11 @@ bool HeavyWorker::Stereo(int currFrame,cv::Mat imgLeft, cv::Mat imgRight)
 			{
 				patch = cv::Rect(array2D[d][0], array2D[d][1], 299, 299);
 				imgDisparity8U_Patch = cv::Mat(imgDisparity8U, patch);
-
-				Depth_Estimation(imgDisparity8U_Patch);
+				colour_patch = cv::Mat(imgLeft, patch);
+				float depth=Depth_Estimation(imgDisparity8U_Patch);
+				//float depth = 1;
+				std::pair<cv::Mat, float> tmpPair(colour_patch, depth);
+				potholeImageListWithDepth.push_back(tmpPair);
 			}
 
 		}
@@ -157,6 +163,7 @@ bool HeavyWorker::Stereo(int currFrame,cv::Mat imgLeft, cv::Mat imgRight)
 
 
 		}
+		
 	}
 	////////////*****************
 	//////////pImageData = pBuffer_R->getPtr();
@@ -190,7 +197,8 @@ bool HeavyWorker::Stereo(int currFrame,cv::Mat imgLeft, cv::Mat imgRight)
 	//////////imshow("LEFT", RGB_img_L);                   // Show our image inside it.
 	//////////cv::waitKey(1);
 
-	return true;
+	//return true;
+	return potholeImageListWithDepth;
 }
 
 void HeavyWorker::MvStereoRectify(cv::Mat _rmap[2][2], cv::Rect vRoi[2]) {
@@ -349,7 +357,7 @@ int HeavyWorker::Pothole_Recognition()
 }
 
 //******* QSF Algorithms **********
-void HeavyWorker::Depth_Estimation(cv::Mat imgDisparity8U)
+float HeavyWorker::Depth_Estimation(cv::Mat imgDisparity8U)
 {
 	cv::Mat xyz(imgDisparity8U.size(), CV_32FC3);
 	reprojectImageTo3D(imgDisparity8U, xyz, Q, false, CV_32F);
@@ -484,6 +492,7 @@ void HeavyWorker::Depth_Estimation(cv::Mat imgDisparity8U)
 		}
 	}
 	std::cout << "Pothole Depth = " << mean << "  " << "cm" << std::endl;
+	return mean;
 	//cout << "std Residual = " << std << endl << endl;
 	//cout << "mean + 2*std Residual = " << mean + 2 * std << endl << endl;
 	//meanStdDev(InputArray src, OutputArray mean, OutputArray stddev, InputArray mask=noArray())

@@ -20,18 +20,19 @@ DeviceContainer::DeviceContainer(XsDevice* device, const XsPortInfo* portInfo, s
 	std::cout << "Device:" + this->m_device->deviceId().toString().toStdString() + " is successfully configured." << std::endl;
 
 }
-void DeviceContainer::addCallback()
+void DeviceContainer::addCallback(std::string dt)
 {
 	
 	
 	ostringstream os;
-	time_t now = time(0);
-	tm *ltm = localtime(&now);
-	char dt[40];
-	strftime(dt, sizeof(dt), "%F_%H_%M", ltm);
-	os << "GPS_" << this->m_device->deviceId().toString().toStdString() <<"_"<<dt<< ".txt";
+	//time_t now = time(0);
+	//tm *ltm = localtime(&now);
+	////char dt[40];
+	//strftime(dt, sizeof(dt), "%F_%H_%M", ltm);
+	//os << "GPS_" << this->m_device->deviceId().toString().toStdString() <<"_"<<dt<< ".txt";
+	os << "GPS_" << this->m_device->deviceId().toString().toStdString() << ".txt";
 	fname = os.str();
-	XsDeviceCallbackHandler* tmp=new XsDeviceCallbackHandler(fname,2);
+	XsDeviceCallbackHandler* tmp=new XsDeviceCallbackHandler("logs/log_"+dt+"/"+fname,2);
 	m_CallBackHandler = tmp;
 	m_device->addCallbackHandler(tmp);
 }

@@ -8,7 +8,7 @@ set (STATIC 1)
 set(xsens_gps_location C:/Program\ Files/Xsens/MT\ Software\ Suite\ 4.8/MT\ SDK)
 set(tis_location C:/Users/saurav/Documents/IC\ Imaging\ Control\ 3.4)
 set (XMP_ROOT "C:/dev/XMP-Toolkit-SDK-CC201607")
-set (XMP_BUILDMODE_DIR Debug)
+set (XMP_BUILDMODE_DIR $(Configuration))
 
 # Platform specific config
 if(UNIX)
@@ -180,11 +180,15 @@ include_directories(
         ${PROJECT_BINARY_DIR}
         ${PROJECT_SOURCE_DIR}/src/GPS
         ${PROJECT_SOURCE_DIR}/src/Camera
+		${PROJECT_SOURCE_DIR}/src/XMP
         ${tis_location}/classlib/include
         ${tis_location}/samples/vc10/Common/
 		"C:/dev/XMP-Toolkit-SDK-CC201607/public/include"
 		"C:/opencv32/build/install/include"
-		"C:/eigen-eigen-5a0156e40feb")
+		"C:/eigen-eigen-5a0156e40feb"
+		"C:/dev/curl-7.62.0-win64-mingw/include"
+#		"C:/dev/curl-7.62.0/include"
+)
 
 if(${WIN32})
     if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
@@ -194,12 +198,16 @@ if(${WIN32})
         find_library(xsensdeviceapi64_LIB xsensdeviceapi64 HINTS ${xsens_gps_location}/x64/lib)
 		link_directories(${tis_location}/classlib/win32/debug)
         find_library(tis_udshl11d_LIB TIS_UDSHL11d_x64 HINTS "${tis_location}/classlib/x64/debug")
+		find_library(tis_udshl11_LIB TIS_UDSHL11_x64 HINTS "${tis_location}/classlib/x64/release")
 		find_library(exif2_LIB exiv2 HINTS "C:/dev/PotholeProject/exiv2/2015/x64/dll/Release/lib")
         target_link_libraries(Pothole ${xstypes64_LIB}
                 ${xsensdeviceapi64_LIB}
-				${tis_udshl11d_LIB}
 				${exif2_LIB}
+#				"C:/dev/curl-7.62.0-win64-mingw/lib/libcurl.lib"
+#				"C:/dev/curl-7.62.0-win64-mingw/bin/libcurl-x64"
+				"C:/dev/curl-7.62.0/build/lib/Debug/libcurl-d_imp.lib"
                 )
+		target_link_libraries(Pothole debug ${tis_udshl11d_LIB} optimized ${tis_udshl11_LIB})
 		set(xstypes_file ${xsens_gps_location}/x64/lib/xstypes64.dll)
 		set(xsensdeviceapi_file ${xsens_gps_location}/x64/lib/xsensdeviceapi64.dll)
 		set(exiv2_file "C:/dev/PotholeProject/exiv2/2015/x64/dll/Release/bin/*.dll")
@@ -285,3 +293,4 @@ add_custom_command(TARGET Pothole POST_BUILD        # Adds a post-build event to
         ${tis_location}/classlib/win32/debug/TIS_UDSHL11d.dll       # <--this is in-file
         $<TARGET_FILE_DIR:Pothole>)                 # <--this is out-file path
 add_custom_command(TARGET Pothole POST_BUILD 	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${exif_files} $<TARGET_FILE_DIR:Pothole>)
+#add_custom_command(TARGET Pothole POST_BUILD    COMMAND ${CMAKE_COMMAND} -E copy_if_different C:/dev/curl-7.62.0/build/lib/Debug/libcurl-d.dll)

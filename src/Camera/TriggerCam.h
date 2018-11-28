@@ -24,7 +24,7 @@
 
 #include <iostream>
 #include <conio.h>
-
+#include <opencv\cv.h>
 #include <tisudshl.h>
 
 #include "CmdHelper.h"
@@ -33,7 +33,7 @@
 using namespace _DSHOWLIB_NAMESPACE;
 
 // Specify the number of buffers to be used.
-#define NUM_BUFFERS 10
+#define NUM_BUFFERS_CAM 10
 
 extern std::atomic_int num_captured;
 
@@ -41,19 +41,29 @@ extern std::atomic_int num_captured;
 class TriggerCam {
 
 public:
-	TriggerCam() {};
+	TriggerCam() :listener(nullptr),
+		trigger_button(nullptr),
+		trigger_switch(nullptr) {
+
+	};
 	TriggerCam(const std::string device_name, const std::string device_properties) :
 		listener(nullptr),
 		trigger_button(nullptr),
 		trigger_switch(nullptr)
 	{
-
+		initCam(device_name, device_properties);
+		
+	}
+	void initCam(const std::string device_name, const std::string device_properties)
+	{
 		grabber.openDev(device_name);
 
 		if (!grabber.isDevValid()) {
-			std::cout << "Camera may not be connected. Ensure both cameras are connected."<<std::endl;
+			std::cout << "Camera may not be connected. Ensure both cameras are connected." << std::endl;
 			std::cout << "Press any key to continue";
-			std::cin.get();
+
+			//std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			char out=std::cin.get();
 			exit(1);
 			//throw std::runtime_error("Invalid device");
 		}
@@ -63,7 +73,7 @@ public:
 		loadTrigger();
 
 		// Assign the number of buffers to the cListener object.
-		listener->setBufferSize(NUM_BUFFERS);
+		listener->setBufferSize(NUM_BUFFERS_CAM);
 
 		// Enable the overlay bitmap to display the frame counter in the live video.
 		grabber.getOverlay()->setEnable(false);
@@ -76,7 +86,7 @@ public:
 		FrameTypeInfoArray acceptedTypes = FrameTypeInfoArray::createRGBArray();
 
 		// Create the frame handler sink
-		pSink = FrameHandlerSink::create(acceptedTypes, NUM_BUFFERS);
+		pSink = FrameHandlerSink::create(acceptedTypes, NUM_BUFFERS_CAM);
 
 		// enable snap mode (formerly tFrameGrabberMode::eSNAP).
 		pSink->setSnapMode(false);
@@ -88,7 +98,9 @@ public:
 
 		grabber.startLive(false);				// Start the grabber.
 	}
-
+	cv::Mat getImage() {
+		return this->listener->img;
+	}
 	void loadTrigger()
 	{
 
@@ -187,6 +199,7 @@ private:
 
 	Grabber grabber;
 	CListener *listener;
+	cv::Mat img;
 	tIVCDButtonPropertyPtr trigger_button;
 	tIVCDSwitchPropertyPtr trigger_switch;
 	smart_ptr<FrameHandlerSink> pSink;

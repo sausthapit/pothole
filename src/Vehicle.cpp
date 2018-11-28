@@ -7,11 +7,11 @@
 
 
 
-Vehicle::Vehicle() {
-	initGPS();
+Vehicle::Vehicle(std::string startTime) {
+	initGPS(startTime);
 	initCamera();
 }
-bool Vehicle::initGPS() {
+bool Vehicle::initGPS(std::string startTime) {
 	try {
 		control = XsControl::construct();
 		assert(control != 0);
@@ -36,7 +36,7 @@ bool Vehicle::initGPS() {
 		}
 		for (itr = gpsList.begin(); itr != gpsList.end(); itr++) {
 			//XsDeviceCallbackHandler m_CallBackHandler(5);
-			(*itr)->addCallback();
+			(*itr)->addCallback(startTime);
 			//(*itr)->gotoMeasurement();
 
 			cout << "Device set for measurement." << endl;
@@ -135,6 +135,7 @@ void Vehicle::recordCamera(cv::Mat &imgLeft, cv::Mat &imgRight)
 		imgLeft = this->camLeft.getImage();
 		imgRight = this->camRight.getImage();
 		
+
 		num_captured.store(0);
 
 		kk++;

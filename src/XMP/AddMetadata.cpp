@@ -17,7 +17,7 @@
 
 using namespace std;
 using namespace AdobeXMPCore;
-
+const char* NS_DC_TERMS = "http://purl.org/dc/terms/";
 void GetLocalizedText(spIArrayNode titleNode, const char* specificLang, const char* genericLang, string lang)
 {
 	AdobeXMPCore::spINode currItem;
@@ -94,7 +94,18 @@ void displayPropertyValues(AdobeXMPCore::spIMetadata metaNode)
 		string simpleNodeValue = simpleNode->GetValue()->c_str();
 		cout << "CreatorTool = " << simpleNodeValue << endl;
 	}
-
+	AdobeXMPCore::spISimpleNode extentNode = metaNode->GetSimpleNode(NS_DC_TERMS, AdobeXMPCommon::npos, "extent", AdobeXMPCommon::npos);
+	if (extentNode != NULL)
+	{
+		string simpleNodeValue = extentNode->GetValue()->c_str();
+		cout << "Extent = " << simpleNodeValue << endl;
+	}
+	AdobeXMPCore::spISimpleNode descNode = metaNode->GetSimpleNode(kXMP_NS_DC, AdobeXMPCommon::npos, "description", AdobeXMPCommon::npos);
+	if (descNode != NULL)
+	{
+		string simpleNodeValue = descNode->GetValue()->c_str();
+		cout << "Description = " << simpleNodeValue << endl;
+	}
 	// Get the first element in the dc:creator array
 	AdobeXMPCore::spIArrayNode arrayNode = metaNode->GetArrayNode(kXMP_NS_DC, AdobeXMPCommon::npos, "creator", AdobeXMPCommon::npos);
 	if (arrayNode != NULL)
@@ -253,6 +264,26 @@ void writeRDFToFile(string * rdf, string filename)
 *the modified XMP is written back to the resource file.
 */
 //
+
+bool setSimpleProperty(AdobeXMPCore::spIMetadata metaNode, const char * nameSpace, const char * tag, const char * value)
+{
+	//Set the simple property value, will create the property in the given nameSpace if not already present
+	try {
+		AdobeXMPCore::spISimpleNode simpleNode = metaNode->GetSimpleNode(nameSpace, AdobeXMPCommon::npos, tag, AdobeXMPCommon::npos);
+		if (simpleNode == NULL)
+		{
+			simpleNode = AdobeXMPCore::ISimpleNode::CreateSimpleNode(nameSpace, AdobeXMPCommon::npos, tag, AdobeXMPCommon::npos);
+			metaNode->InsertNode(simpleNode);
+		}
+		simpleNode->SetValue(value, AdobeXMPCommon::npos);
+		
+	}
+	catch (std::runtime_error err) {
+		std::cout << "Could not set the property" << std::endl;
+	}
+	return true;
+}
+
 int addXMP(string filename ,std::vector<std::string> gpsString)
 //int main(int argc, const char * argv[])
 {
@@ -300,6 +331,9 @@ int addXMP(string filename ,std::vector<std::string> gpsString)
 				cout << status << endl;
 				cout << filename << " is opened successfully" << endl;
 
+				
+				string actualPrefix;
+				SXMPMeta::RegisterNamespace(NS_DC_TERMS, "dcterms", &actualPrefix);
 				// Create the xmp object and get the xmp data
 				SXMPMeta meta;
 				myFile.GetXMP(&meta);
@@ -309,6 +343,8 @@ int addXMP(string filename ,std::vector<std::string> gpsString)
 				AdobeXMPCore::spIDOMParser parser = DOMRegistry->GetParser("rdf");
 				AdobeXMPCore::spIMetadata metaNode = parser->Parse(buffer.c_str(), buffer.size());
 
+				
+				
 				// Display some properties in the console
 				displayPropertyValues(metaNode);
 
@@ -336,41 +372,28 @@ int addXMP(string filename ,std::vector<std::string> gpsString)
 				AdobeXMPCore::spIArrayNode arrayNode = metaNode->GetArrayNode(kXMP_NS_DC, AdobeXMPCommon::npos, "creator", AdobeXMPCommon::npos);
 				
 				// If the array does not exist, it will be created
-				if (arrayNode == NULL)    
+				if (arrayNode == NULL)
 				{
-					AdobeXMPCore::spIArrayNode arrayNode = AdobeXMPCore::IArrayNode::CreateUnorderedArrayNode(kXMP_NS_DC, AdobeXMPCommon::npos, "creator", AdobeXMPCommon::npos);
-					AdobeXMPCore::spINode creatorChild1 = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_DC, AdobeXMPCommon::npos, "AuthorName", AdobeXMPCommon::npos, "abc", AdobeXMPCommon::npos);
-					AdobeXMPCore::spINode creatorChild2 = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_DC, AdobeXMPCommon::npos, "AnotherAuthorName", AdobeXMPCommon::npos, "xyz", AdobeXMPCommon::npos);
+					arrayNode = AdobeXMPCore::IArrayNode::CreateUnorderedArrayNode(kXMP_NS_DC, AdobeXMPCommon::npos, "creator", AdobeXMPCommon::npos);
+				}
+					AdobeXMPCore::spINode creatorChild1 = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_DC, AdobeXMPCommon::npos, "AuthorName", AdobeXMPCommon::npos, "Saurav", AdobeXMPCommon::npos);
+					
+					AdobeXMPCore::spINode creatorChild2 = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_DC, AdobeXMPCommon::npos, "AnotherAuthorName", AdobeXMPCommon::npos, "EWIC", AdobeXMPCommon::npos);
 					arrayNode->AppendNode(creatorChild1);
 					arrayNode->AppendNode(creatorChild2);
+				//metaNode->InsertNode(arrayNode);
 
-				}
-				// If it exists, then just append the nodes to array node
-				else
-				{
-					AdobeXMPCore::spINode creatorChild1 = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_DC, AdobeXMPCommon::npos, "AuthorName", AdobeXMPCommon::npos, "abc", AdobeXMPCommon::npos);
-					AdobeXMPCore::spINode creatorChild2 = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_DC, AdobeXMPCommon::npos, "AnotherAuthorName", AdobeXMPCommon::npos, "xyz", AdobeXMPCommon::npos);
-					arrayNode->AppendNode(creatorChild1);
-					arrayNode->AppendNode(creatorChild2);
-				}
 				// Add gps info
-				AdobeXMPCore::spISimpleNode gpsLatitude = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLatitude", AdobeXMPCommon::npos);
-				if (gpsLatitude == NULL)
-					gpsLatitude = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLatitude", AdobeXMPCommon::npos);
-				gpsLatitude->SetValue(gpsString.at(1).c_str(), AdobeXMPCommon::npos);
-				AdobeXMPCore::spISimpleNode gpsLongitude = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLongitude", AdobeXMPCommon::npos);
-				if (gpsLongitude == NULL)
-					gpsLongitude = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSLongitude", AdobeXMPCommon::npos);
-				gpsLongitude->SetValue(gpsString.at(2).c_str(), AdobeXMPCommon::npos);
-				AdobeXMPCore::spISimpleNode gpsAltitude = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSAltitude", AdobeXMPCommon::npos);
-				if (gpsAltitude == NULL)
-					gpsAltitude = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSAltitude", AdobeXMPCommon::npos);
-				gpsAltitude->SetValue(gpsString.at(3).c_str(), AdobeXMPCommon::npos);
-				AdobeXMPCore::spISimpleNode gpsTimeStamp = metaNode->GetSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSTimeStamp", AdobeXMPCommon::npos);
-				if (gpsTimeStamp == NULL)
-					gpsTimeStamp = AdobeXMPCore::ISimpleNode::CreateSimpleNode(kXMP_NS_EXIF, AdobeXMPCommon::npos, "GPSTimeStamp", AdobeXMPCommon::npos);
-				gpsTimeStamp->SetValue(gpsString.at(0).c_str(), AdobeXMPCommon::npos);
 				
+				setSimpleProperty(metaNode, kXMP_NS_EXIF, "GPSTimeStamp", gpsString.at(0).c_str());
+				setSimpleProperty(metaNode, kXMP_NS_EXIF, "GPSLatitude", gpsString.at(1).c_str());
+				setSimpleProperty(metaNode, kXMP_NS_EXIF, "GPSLongitude", gpsString.at(2).c_str());
+				setSimpleProperty(metaNode, kXMP_NS_EXIF, "GPSAltitude", gpsString.at(3).c_str());
+
+				setSimpleProperty(metaNode, kXMP_NS_DC, "description", "Image of pothole.");
+				setSimpleProperty(metaNode, kXMP_NS_DC, "type", "Image");
+				setSimpleProperty(metaNode, kXMP_NS_DC, "subject", "Image");
+				setSimpleProperty(metaNode, NS_DC_TERMS, "extent", gpsString.at(4).c_str());
 				// Display the properties again to show changes
 				cout << "After update:" << endl;
 				displayPropertyValues(metaNode);
@@ -382,13 +405,13 @@ int addXMP(string filename ,std::vector<std::string> gpsString)
 				fileMeta.ParseFromBuffer(serializedPacket.c_str(), serializedPacket.length());
 
 				// Create a new XMP object from an RDF string
-				SXMPMeta rdfMeta = createXMPFromRDF();
+				//SXMPMeta rdfMeta = createXMPFromRDF();
 
 				// Append the newly created properties onto the original XMP object
 				// This will:
 				// a) Add ANY new TOP LEVEL properties in the source (rdfMeta) to the destination (fileMeta)
 				// b) Replace any top level properties in the source with the matching properties from the destination
-				SXMPUtils::ApplyTemplate(&fileMeta, rdfMeta, kXMPTemplate_AddNewProperties | kXMPTemplate_ReplaceExistingProperties | kXMPTemplate_IncludeInternalProperties);
+				//SXMPUtils::ApplyTemplate(&fileMeta, rdfMeta, kXMPTemplate_AddNewProperties | kXMPTemplate_ReplaceExistingProperties | kXMPTemplate_IncludeInternalProperties);
 
 				// Serialize the packet and write the buffer to a file
 				// Let the padding be computed and use the default linefeed and indents without limits
