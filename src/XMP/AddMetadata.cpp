@@ -273,7 +273,7 @@ bool setSimpleProperty(AdobeXMPCore::spIMetadata metaNode, const char * nameSpac
 		if (simpleNode == NULL)
 		{
 			simpleNode = AdobeXMPCore::ISimpleNode::CreateSimpleNode(nameSpace, AdobeXMPCommon::npos, tag, AdobeXMPCommon::npos);
-			metaNode->InsertNode(simpleNode);
+			//metaNode->InsertNode(simpleNode);
 		}
 		simpleNode->SetValue(value, AdobeXMPCommon::npos);
 		
@@ -419,9 +419,9 @@ int addXMP(string filename ,std::vector<std::string> gpsString)
 				fileMeta.SerializeToBuffer(&newBuffer);
 
 				// Display the properties again to show changes
-				cout << "After Appending Properties:" << endl;
+				//cout << "After Appending Properties:" << endl;
 				AdobeXMPCore::spIMetadata newMetaNode = parser->Parse(newBuffer.c_str(), newBuffer.size());
-				displayPropertyValues(newMetaNode);
+				//displayPropertyValues(newMetaNode);
 
 				// Write the packet to a file as RDF
 				writeRDFToFile(&newBuffer, filename + "_XMP_RDF.txt");

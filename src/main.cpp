@@ -2,6 +2,7 @@
 
 #include<iostream>
 #include<conio.h>
+#include<string>
 #include <chrono>
 #include <iomanip>
 #include <cassert>
@@ -12,7 +13,8 @@
 #include "Vehicle.h"
 #include "AddMetadata.h"
 #include "HeavyWorker.h"
-#include <curl/curl.h>
+
+#include "util.h"
 
 
 #define MULTITHREAD 1
@@ -20,88 +22,29 @@
 #ifdef MULTITHREAD
 #include "ctpl_stl.h"
 #endif // MULTITHREAD
-void uploadImage(const char *file);
-//using namespace std;
-//static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
-//{
-//	size_t retcode;
-//	curl_off_t nread;
-//
-//	/* in real-world cases, this would probably get this data differently
-//	as this fread() stuff is exactly what the library already would do
-//	by default internally */
-//	retcode = fread(ptr, size, nmemb, stream);
-//
-//	nread = (curl_off_t)retcode;
-//
-//	fprintf(stderr, "*** We read %" CURL_FORMAT_CURL_OFF_T
-//		" bytes from file\n", nread);
-//
-//	return retcode;
-//}
-bool log_data = false;
-bool run_realtime = false;
-bool run_sim = false;
 
-CURL *curl;
-CURLcode res;
-FILE * hd_src;
-struct stat file_info;
-curl_mime *mime;
-curl_mimepart *part;
-char *file;
-char *url;
+std::vector<std::pair<string, string>> options;
+
+std::string simulationFolder; //This folder is used as input if simulation is selected in the menu.
+std::string baseUrl; // = "http://localhost:8080/Pothole_server_war_exploded/upload/";
+char startTime[40]; // Application start time. Used for creating folder names.
+double fps;// = 10;
+
+
+int totalSimulationImages;
+
+std::string modelTxt, modelBin, leftCameraSettingsFile, rightCameraSettingsFile;
+
+
+//extern cv::String modelTxt;
+//extern cv::String modelBin;
 ofstream gpsFile;
-std::string resultFolder;
-/**
-* Reads csv file into table, exported as a vector of vector of doubles.
-* @param inputFileName input file name (full path).
-* @return data as vector of vector of doubles.
-*/
-vector<vector<double>> parse2DCsvFile(string inputFileName) {
+std::string resultFolder; // This is where the images and GPS data is stored.
 
-	vector<vector<double> > data;
-	ifstream inputFile(inputFileName);
-	int l = 0;
+void uploadImage(const char *, std::string);
 
-	while (inputFile) {
-		l++;
-		string s;
-		if (!getline(inputFile, s)) break;
-		if (s[0] != '#') {
-			istringstream ss(s);
-			vector<double> record;
 
-			while (ss) {
-				string line;
-				if (!getline(ss, line, ','))
-					break;
-				try {
-					record.push_back(stof(line));
-				}
-				catch (const std::invalid_argument e) {
-					cout << "NaN found in file " << inputFileName << " line " << l
-						<< endl;
-					e.what();
-				}
-			}
 
-			data.push_back(record);
-		}
-	}
-
-	if (!inputFile.eof()) {
-		cerr << "Could not read file " << inputFileName << "\n";
-		/*__throw_invalid_argument("File not found.");*/
-	}
-
-	return data;
-}
-template<class IteratorIn, class IteratorOut>
-void toString(IteratorIn first, IteratorIn last, IteratorOut out)
-{
-	std::transform(first, last, out, [](auto d) { return std::to_string(d); });
-}
 std::vector<std::string> writeData(XsDataPacket packet) {
 
 	std::vector<std::string> gpsString;
@@ -132,20 +75,21 @@ void runRealtime(HeavyWorker *hw, cv::Mat leftMat, cv::Mat rightMat, std::vector
 
 		if (result.size() > 0)
 		{
-			std::cout << "There are potholes in this image. Sending them to cloud for storage" << std::endl;
+			std::cout << "There are potholes in this image. Sending them to cloud for storage." << std::endl;
 			int count = 0;
 			for (auto potholePatch : result)
 			{
-				std::ostringstream filename, ss;
+				std::ostringstream filename, ss, fileNameAndPath;
 				cout << potholePatch.second;
 				count = count + 1;
-				filename << resultFolder << "potholePatch_" << i << "_" << count << ".png";
-				cv::imwrite(filename.str(), potholePatch.first);
+				filename << "potholePatch_" << i << "_" << count << ".png";
+				fileNameAndPath << resultFolder << filename.str();
+				cv::imwrite(fileNameAndPath.str(), potholePatch.first);
 				ss << potholePatch.second;
 				gpsString.push_back(ss.str());
-				addXMP(filename.str(), gpsString);
-				
-				uploadImage(filename.str().c_str());
+				addXMP(fileNameAndPath.str(), gpsString);
+
+				uploadImage(fileNameAndPath.str().c_str(), filename.str());
 			}
 
 		}
@@ -155,78 +99,111 @@ void runRealtime(HeavyWorker *hw, cv::Mat leftMat, cv::Mat rightMat, std::vector
 	}
 
 }
+
+void enumerateOptions(std::map<string, string> options)
+{
+	baseUrl = options.at("baseUrl");
+	fps = stod(options.at("fps"));
+	simulationFolder = options.at("simulationFolder");
+	totalSimulationImages = stoi(options.at("totalSimulationImages"));
+	/*modelTxt = cv::String(options.at("modelTxt"));
+	modelBin = cv::String(options.at("modelBin"));*/
+	modelTxt = options.at("modelTxt");
+	modelBin = (options.at("modelBin"));
+	leftCameraSettingsFile = options.at("leftCameraSettingsFile");
+	rightCameraSettingsFile = options.at("rightCameraSettingsFile");
+
+}
+
+std::map<string, string> parseConfigurationFile(std::string configFile="config.txt")
+{
+	
+	std::map<string, string> options;
+	std::string line;
+	ifstream myfile;
+	myfile.open(configFile);
+	while (std::getline(myfile, line))
+	{
+		std::istringstream is_line(line);
+		std::string key;
+		if (std::getline(is_line, key, '='))
+		{
+			std::string value;
+			if (std::getline(is_line, value))
+
+				options.insert(pair<string, string>(key, value));
+		}
+	}
+	return options;
+}
+
 int main(int argc, char** argv)
 {
-	//Get a starting time.
-	std::string simulationFolder;
-	
-	time_t now = time(0);
-	tm *ltm = localtime(&now);
-	char startTime[40];
-	strftime(startTime, sizeof(startTime), "%F_%H_%M", ltm);
-	HeavyWorker hw;
-	std::cout << "Pothole Detection and Localisation tool" << std::endl;
-	std::cout << "======================================= " << std::endl;
-	std::cout << "Please select one of the option below" << std::endl;
-	std::cout << "======================================= " << std::endl;
-	std::cout << "[1] Collect Data Only" << std::endl;
-	//std::cout << "[2] Run realtime " << std::endl;
-	std::cout << "[2] Run realtime and collect data" << std::endl;
-	std::cout << "[3] Run realtime on previously collected data" << std::endl;
-	std::cout << "[4] Exit" << std::endl;
+	if (argc == 2)
+	{
+		std::ostringstream os;
+		os << argv[1];
 
-
-
-	char option = std::cin.get();
-	if (option == '1') {
-		std::cout << "Only logging data." << std::endl;
-		log_data = true;
-	}
-	//else if (option == '2') {
-	//	std::cout << "Detecting pothole realtime" << std::endl;
-	//	run_realtime = true;
-	//}
-	else if (option == '2') {
-		std::cout << "Running logger and detector" << std::endl;
-		log_data = true;
-		run_realtime = true;
-	}
-	else if (option == '3') {
-		if (argc ==2)
-		{
-			simulationFolder = argv[1];
-		}
-		else {
-			std::cout << "Please specify the folder as argument.";
-			exit(1);
-			
-		}	
-		std::cout << "Running detector on previously captured data." << std::endl;
-		log_data = false;
-		run_realtime = false;
-		run_sim = true;
-		
+		enumerateOptions(parseConfigurationFile(os.str()));
 	}
 	else {
-		std::cout << "Exiting" << std::endl;
-		return 0;
+		enumerateOptions(parseConfigurationFile());
 	}
 
+	setOptions();
+
+	time_t now = time(0);
+	tm *ltm = localtime(&now);
+
+	strftime(startTime, sizeof(startTime), "%F_%H_%M", ltm);
+
+	std::ostringstream os;
+	int len = 6;
+	char *randomStr = NULL;
+	randomStr = (char *)malloc(len * sizeof(char));
+	gen_random(randomStr, len);
+
+	os << "logs/log_" << randomStr << "_" << startTime;
+	resultFolder = os.str();
+
+	/* In windows, this will init the winsock stuff */
+	curl_global_init(CURL_GLOBAL_ALL);
+
+
+	HeavyWorker hw( modelTxt, modelBin);
+	
 	if (run_sim)
 	{
 		//This is very naive approach to run pothole recognition on already gathered images in the simulationFolder. The simulationFolder should contain one csv file containing the GPS
 		//log. Each line refers to a GPS sample and camera index. So line 1 = GPS of image 1 (left_1.png and right_1.png). 
-		int totalImages = 1;
+		if (simulationFolder == ""|| totalSimulationImages==NULL)
+		{
+			std::cout << "Simulation selected but folder not specified. Please run again with folder as argument." << std::endl;
+			std::cout << "Specify simulationFolder and totalSimulationImages in config.txt" << std::endl;
+			std::cout << "Press return to continue.";
+
+			std::cin.clear();
+			std::cin.ignore(INT_MAX, '\n');
+			std::cin.get();
+			
+			exit(0);
+		}
+		
+		std::cout << "Running detection on images 1 to " << totalSimulationImages << " from " << simulationFolder << " folder." << std::endl;
 		//std::string simulationFolder = "C:\\Users\\saurav\\Desktop\\gtagged\\images";
 
 		cv::Mat leftMat, rightMat;
 		//HeavyWorker hw;
-		vector<vector<double>> data = parse2DCsvFile("C:\\dev\\PotholeProject\\build_vs2015\\logs\\log_2018-11-26_17_41\\gpsFile.csv");
-		for (int i = 1; i <= totalImages; i++)
+		std::string gpsFile = simulationFolder + "/gpsFile.csv";
+		
+		vector<vector<double>> data = parse2DCsvFile(simulationFolder + "\\gpsFile.csv");
+		cout << "GPS log found at " << gpsFile << std::endl;
+		for (int i = 1; i <= totalSimulationImages; i++)
 		{
-			std::ostringstream osLeft, osRight, filename, ss;
-			osLeft << simulationFolder << "/left_" << i << ".jpg";
-			osRight << simulationFolder << "/right_" << i << ".jpg";
+			std::ostringstream osLeft, osRight, lfilename, ss;
+			lfilename << "left_" << i << ".png";
+			osLeft << simulationFolder << "/" << lfilename.str();
+			osRight << simulationFolder << "/right_" << i << ".png";
 
 			leftMat = cv::imread(osLeft.str());
 			rightMat = cv::imread(osRight.str());
@@ -238,17 +215,17 @@ int main(int argc, char** argv)
 			toString(std::begin(gpsDouble), std::end(gpsDouble), std::back_inserter(gpsString));
 
 			runRealtime(&hw, leftMat, rightMat, gpsString, i);
+			/*gpsString.push_back("56");
+			assert(gpsString.size() == 5);
+			addXMP(osLeft.str(), gpsString);
+			uploadImage(osLeft.str().c_str(), lfilename.str());*/
 			std::cout << "Finished processing " << i << " image" << std::endl;
 		}
 	}
 	else {
 		namespace fs = std::experimental::filesystem;// this is c++ 14 feature
-		std::string fname;
-		std::ostringstream os;
-
-
-		os << "logs/log_" << startTime;
-		resultFolder = os.str();
+		
+		
 		try {
 			fs::create_directories("" + resultFolder);
 		}
@@ -261,7 +238,7 @@ int main(int argc, char** argv)
 
 		Vehicle v(startTime);
 		v.recordGPS();
-		double fps = 20;
+		
 		double nanoSecondsBetweenFrames = (1 / fps) * 1000000000;
 		int count = 0;
 		while (!_kbhit())
@@ -292,8 +269,8 @@ int main(int argc, char** argv)
 			double timeElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(finish - start).count();
 
 			double sleepTimeMicro = (nanoSecondsBetweenFrames - timeElapsed) / 1000;
-			if (sleepTimeMicro) {
-				std::cout << "Overran by" << sleepTimeMicro / 1000000 << "seconds" << endl;
+			if (sleepTimeMicro<0) {
+				std::cout << "Overran by" << sleepTimeMicro  << " micro seconds" << endl;
 				//std::cout << "Consider decreasing FPS.";
 				sleepTimeMicro = 0;
 			}
@@ -328,72 +305,7 @@ int main(int argc, char** argv)
 
 
 	cout << "Press [ENTER] to continue." << std::endl; std::cin.get();
+	curl_global_cleanup();
 	return 0;
 }
 
-
-void uploadImage(const char *file)
-{
-	//Uses libcurl to upload image to the server. The server is a REST api accepting HTTP PUT
-	url = "http://localhost:8080/Pothole_server_war_exploded/upload";
-	//file = "img.jpg";
-
-	/* get the file size of the local file */
-	stat(file, &file_info);
-
-	/* get a FILE * of the same file, could also be made with
-	fdopen() from the previous descriptor, but hey this is just
-	an example! */
-	hd_src = fopen(file, "rb");
-
-	/* In windows, this will init the winsock stuff */
-	curl_global_init(CURL_GLOBAL_ALL);
-
-	/* get a curl handle */
-	curl = curl_easy_init();
-	if (curl) {
-		/* we want to use our own read function */
-		curl_easy_setopt(curl, CURLOPT_READFUNCTION, fread);
-
-		/* enable uploading */
-		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-
-		/* HTTP PUT please */
-		//curl_easy_setopt(curl, CURLOPT_PUT, 1L);
-
-		/* specify target URL, and note that this URL should include a file
-		name, not only a directory */
-		curl_easy_setopt(curl, CURLOPT_URL, url);
-
-		/* now specify which file to upload */
-		curl_easy_setopt(curl, CURLOPT_READDATA, hd_src);
-
-		curl_easy_setopt(curl, CURLOPT_POST, 1L);
-		/* provide the size of the upload, we specicially typecast the value
-		to curl_off_t since we must be sure to use the correct data size */
-		curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
-			(curl_off_t)file_info.st_size);
-
-		///* Build an HTTP form with a single field named "file", */
-		//mime = curl_mime_init(curl);
-		//part = curl_mime_addpart(mime);
-		//curl_mime_data(part, "This is the field data", CURL_ZERO_TERMINATED);
-		//curl_mime_name(part, "file");
-
-		//curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
-
-		/* Now run off and do what you've been told! */
-		res = curl_easy_perform(curl);
-		/* Check for errors */
-		if (res != CURLE_OK)
-			fprintf(stderr, "curl_easy_perform() failed: %s\n",
-				curl_easy_strerror(res));
-
-		/* always cleanup */
-		curl_easy_cleanup(curl);
-	}
-	fclose(hd_src); /* close the local file */
-
-	curl_global_cleanup();
-
-}

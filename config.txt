@@ -1,0 +1,6 @@
+Config File for pothole executable. There is no error handling with this file. 
+
+baseUrl=http://localhost:8080/Pothole_server_war_exploded/upload/
+fps=10
+simulationFolder=C:\dev\PotholeProject\build_vs2015\logs\log_2018-12-05_16_31
+totalSimulationImages=100

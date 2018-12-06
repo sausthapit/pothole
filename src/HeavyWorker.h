@@ -22,7 +22,7 @@
 class HeavyWorker 
 {
 public:
-	HeavyWorker();
+	HeavyWorker(std::string modelTxt, std::string modelBin);
 	~HeavyWorker();
 	std::vector<std::pair<cv::Mat, float>> Stereo(cv::Mat,cv::Mat);
 	 std::vector<cv::String> readClassNames(const char *);
@@ -45,9 +45,11 @@ private:
 
 	cv::Mat Q;
 
-	cv::String modelTxt = "aaaa.prototxt";
-	cv::String modelBin = "alaa_project_train_iter_100.caffemodel";
-	cv::dnn::Net net = cv::dnn::readNetFromCaffe(modelTxt, modelBin);
+	/*cv::String modelTxt;
+	cv::String modelBin;*/
+	std::string modelTxt;
+	std::string modelBin;
+	cv::dnn::Net net;
 	cv::Rect patch;
 	cv::Mat inputBlob;
 	cv::Mat imgDisparity8U_Patch;

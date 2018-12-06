@@ -59,8 +59,8 @@ bool Vehicle::initCamera() {
 
 	atexit(ExitLibrary);
 	
-	camLeft.initCam("DFK 33UX264", "device_left.xml");
-	camRight.initCam("DFK 33UX264 1", "device_right.xml");
+	camLeft.initCam("DFK 33UX264", leftCameraSettingsFile);
+	camRight.initCam("DFK 33UX264 1", rightCameraSettingsFile);
 	
 	return true;
 	

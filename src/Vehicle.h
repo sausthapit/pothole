@@ -21,6 +21,7 @@ typedef DeviceInfo::iterator DeviceInfoIterator;
 typedef vector<DeviceContainer*> ListOfGPS;
 typedef ListOfGPS::iterator GPSIterator;
 
+extern std::string leftCameraSettingsFile, rightCameraSettingsFile;
 // Specify the number of buffers to be used.
 //#define NUM_BUFFERS_CAM 10
 class Vehicle {

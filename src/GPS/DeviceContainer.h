@@ -2,11 +2,11 @@
 #include <xsensdeviceapi.h>
 #include <iostream>
 #include <list>
-
 #include "xsdevicecallbackhandler.h"
+
 #include<thread>
 
-
+extern std::string resultFolder;
 
 class DeviceContainer
 {
@@ -14,7 +14,7 @@ private:
 	//XsDevice * m_device;
 	const XsPortInfo* m_portInfo;
 	mutable XsMutex m_mutex;
-	string fname;
+	std::string fname;
 	size_t m_maxNumberOfPacketsInBuffer;
 	size_t m_numberOfPacketsInBuffer;
 	std::list<XsDataPacket> m_packetBuffer;

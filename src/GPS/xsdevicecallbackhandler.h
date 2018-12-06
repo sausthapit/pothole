@@ -32,7 +32,7 @@
 #include <xsensdeviceapi.h>
 #include <fstream>
 #include <chrono>
-
+#include <list>
 using namespace std;
 
 //--------------------------------------------------------------------------------
@@ -93,6 +93,7 @@ protected:
 		ostringstream os;
 		XsVector gps = packet->positionLLA();
 		XsTimeStamp t = packet->m_toa;
+		latestGPS = *packet; 
 		int64_t stamp = std::chrono::duration_cast<std::chrono::duration<int64_t, std::micro>>(std::chrono::steady_clock::now().time_since_epoch()).count();
 		time_t tt = t.msTime() / 1000;
 		os << t.msTime() << "," << stamp << "," << gps[0] << "," << gps[1] << "," << gps[2];

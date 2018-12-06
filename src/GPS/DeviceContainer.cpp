@@ -1,3 +1,4 @@
+
 #include "DeviceContainer.h"
 
 
@@ -31,8 +32,8 @@ void DeviceContainer::addCallback(std::string dt)
 	//strftime(dt, sizeof(dt), "%F_%H_%M", ltm);
 	//os << "GPS_" << this->m_device->deviceId().toString().toStdString() <<"_"<<dt<< ".txt";
 	os << "GPS_" << this->m_device->deviceId().toString().toStdString() << ".txt";
-	fname = os.str();
-	XsDeviceCallbackHandler* tmp=new XsDeviceCallbackHandler("logs/log_"+dt+"/"+fname,2);
+	
+	XsDeviceCallbackHandler* tmp=new XsDeviceCallbackHandler(resultFolder +"/"+fname,2);
 	m_CallBackHandler = tmp;
 	m_device->addCallbackHandler(tmp);
 }

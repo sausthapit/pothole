@@ -2,8 +2,9 @@
 
 
 
-HeavyWorker::HeavyWorker()
+HeavyWorker::HeavyWorker(std::string modelTxt, std::string modelBin)
 {
+	this->net= cv::dnn::readNetFromCaffe(modelTxt, modelBin);
 	for (int d = 0; d < 5 + 1; d++)
 	{
 		array2D[d][0] = 0;
